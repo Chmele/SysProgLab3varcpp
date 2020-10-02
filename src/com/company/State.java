@@ -15,12 +15,6 @@ public class State {
         rules = new HashMap<>();
     }
 
-    public State(String s, boolean isFinal){
-        name = s;
-        this.isFinal = isFinal;
-        rules = new HashMap<>();
-    }
-
     public LexemType getType(){
         return type;
     }

@@ -5,7 +5,12 @@ public class Lexem {
     private LexemType type;
 
     public Lexem(){
-        this.letters = new String();
+        this.letters = "";
+    }
+
+    public Lexem(LexemType t, String s){
+        this.letters = s;
+        this.type = t;
     }
 
     public void append(String s){
