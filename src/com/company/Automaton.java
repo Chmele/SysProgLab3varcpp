@@ -7,18 +7,21 @@ public class Automaton {
     private State start;
     private State current;
     private List<String> keyWords = new ArrayList<String>(List.of("auto", "class", "continue", "delete",
-            "do", "double", "enum", "for", "if", "int", "long", "new", "or"));
+            "do", "double", "enum", "for", "if", "int", "long", "new", "or", "return"));
 
     List<String> digits10 = new ArrayList<String>(List.of("0123456789".split("")));
     List<String> digits8 = new ArrayList<String>(List.of("01234567".split("")));
     List<String> digits16 = new ArrayList<String>(List.of("0123456789abcdefABCDEF".split("")));
     List<String> letters = new ArrayList<String>(List.of("qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM".split("")));
     List<String> any = new ArrayList<String>();
+    List<String> anyWithSpace = new ArrayList<String>();
 
 
     public Automaton() {
         any.addAll(letters);
         any.addAll(digits10);
+        anyWithSpace = new ArrayList<>(any);
+        anyWithSpace.add(" ");
         start = new State("Start parsing...", false, LexemType.NOT_RECOGNIZED);
     }
 
@@ -33,7 +36,7 @@ public class Automaton {
                 lexem.setType(LexemType.KEYWORD);
             }
             ret.add(lexem);
-            System.out.println(lexem.getType());
+//            System.out.println(lexem.getType());
             i += lexem.getLetters().length();
         }
         return ret;
@@ -43,23 +46,30 @@ public class Automaton {
         this.current = start;
         var ret = new Lexem();
         int i = from;
-        while(i < s.length() && s.charAt(i) != ' '){
+        while(i < s.length()){
             var type = this.putSymbol(String.valueOf(s.charAt(i)));
             if (type != null) {
                 ret.setType(type);
+                ret.append(String.valueOf(s.charAt(i)));
             }
-            ret.append(String.valueOf(s.charAt(i)));
+            else return ret;
             i++;
         }
         return ret;
     }
 
     private LexemType putSymbol(String s){
-        System.out.printf("char %s ", s);
-        this.current = this.current.map(s);
-        if (current == null) return LexemType.NOT_RECOGNIZED;
-        System.out.println(this.current.getName());
-        return current.getType();
+        try {
+//            System.out.printf("char %s ", s);
+            var next = this.current.map(s);
+            if (next == null) return null;
+            else current = next;
+//            System.out.println(this.current.getName());
+            return current.getType();
+        }
+        catch (NullPointerException e){
+            return LexemType.NOT_RECOGNIZED;
+        }
     }
 
     public void initAsCppLexer(){
@@ -143,12 +153,12 @@ public class Automaton {
         start.appendRule("/", q0);
         var q1 = new State("comment input", true, LexemType.COMMENT);
         q0.appendRule("/", q1);
-        q1.appendRule(any, q1);
+        q1.appendRule(anyWithSpace, q1);
     }
 
     private void initPunctuationOperatorStates(){
         var q0 = new State("Punctuation", true, LexemType.PUNCTUATION);
-        start.appendRule(List.of(",;:".split("")), q0);
+        start.appendRule(List.of(",;:()[]".split("")), q0);
 
         q0 = new State("+ input", true, LexemType.OPERATOR);
         start.appendRule("+", q0);
@@ -178,5 +188,10 @@ public class Automaton {
         start.appendRule("+", q0);
         q1 = new State(">> or >=", true, LexemType.OPERATOR);
         q0.appendRule(List.of(">=".split("")), q1);
+
+        q0 = new State("= input", true, LexemType.OPERATOR);
+        start.appendRule("=", q0);
+        q1 = new State("==", true, LexemType.OPERATOR);
+        q0.appendRule("=", q1);
     }
 }

@@ -13,7 +13,7 @@ public class Lexem {
     }
 
     public String toString(){
-        return letters;
+        return String.format("<%s> - <%s>", type, letters);
     }
 
     public void setType(LexemType t){
