@@ -1,5 +1,2 @@
-a;
-int a = 10;
-return a;
-2ch;7-1
-kek //asldml salkdnkasjd
+  StatusLine( "Press any key for text mode..." );
+  getch();

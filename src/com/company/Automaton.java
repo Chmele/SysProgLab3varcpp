@@ -23,6 +23,7 @@ public class Automaton {
         any.addAll(digits10);
         anyWithSpace = new ArrayList<>(any);
         anyWithSpace.add(" ");
+        anyWithSpace.add(".");
         start = new State("Start parsing...", false, LexemType.NOT_RECOGNIZED);
         incorrect.appendRule(any, incorrect);
     }
@@ -38,7 +39,12 @@ public class Automaton {
                 lexem.setType(LexemType.KEYWORD);
             }
             if (lexem.getLetters().length() == 0){
-                ret.add(new Lexem(LexemType.NOT_RECOGNIZED, String.valueOf(s.charAt(i))));
+                try {
+                    ret.add(new Lexem(LexemType.NOT_RECOGNIZED, String.valueOf(s.charAt(i))));
+                }
+                catch (StringIndexOutOfBoundsException e){
+//                    i--;
+                }
                 i++;
             }
             else {
@@ -149,7 +155,7 @@ public class Automaton {
     private void initStringCharStates(){
         var q0  = new State("String started", false, LexemType.NOT_RECOGNIZED);
         start.appendRule("\"", q0);
-        q0.appendRule(any, q0);
+        q0.appendRule(anyWithSpace, q0);
         var q1 = new State("String finished", false, LexemType.STRING);
         q0.appendRule("\"", q1);
 

@@ -1,15 +1,14 @@
 package com.company;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.Scanner;
 
 public class Main {
 
     public static void main(String[] args) {
 		System.out.println("Enter file path:");
-		Scanner input = new Scanner("C:\\Users\\admin\\IdeaProjects\\SysProgLab3varcpp\\src\\input.txt");//(System.in);
+//		Scanner input = new Scanner("C:\\Users\\admin\\IdeaProjects\\SysProgLab3varcpp\\src\\input.txt");//(System.in);
+		Scanner input = new Scanner(System.in);
 		String filePath = input.nextLine();
 		try {
 			FileReader fr = new FileReader(filePath);
@@ -21,12 +20,17 @@ public class Main {
 			String[] lines = text.split("\\r?\\n|\\t");
 			var l = new Automaton();
 			l.initAsCppLexer();
+			String str = "";
 			for (var line:lines){
 				for(var lexem:l.recognize(line)) {
-					System.out.println(lexem);
+					str = str.concat(lexem.toString());
+					str = str.concat("\n");
 				}
 			}
-//			l.recognize(lines[0]);
+			System.out.print(str);
+			BufferedWriter writer = new BufferedWriter(new FileWriter("C:\\Users\\admin\\IdeaProjects\\SysProgLab3varcpp\\src\\output.txt"));
+			writer.write(str);
+			writer.close();
 		}
 		catch (FileNotFoundException e){
 			System.out.println("No such file");
