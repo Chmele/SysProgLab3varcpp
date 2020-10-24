@@ -17,12 +17,11 @@ public class Main {
 			while ((i=fr.read()) != -1)
 				sb.append((char) i);
 			String text = sb.toString();
-			String[] lines = text.split("\\r?\\n|\\t");
 			var l = new Automaton();
 			l.initAsCppLexer();
 			String str = "";
-			for (var line:lines){
-				for(var lexem:l.recognize(line)) {
+			for(var lexem:l.recognize(text)) {
+				if(lexem.getType() != LexemType.COMMENT) {
 					str = str.concat(lexem.toString());
 					str = str.concat("\n");
 				}

@@ -16,14 +16,20 @@ public class Automaton {
     List<String> letters = new ArrayList<>(List.of("qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM".split("")));
     List<String> any = new ArrayList<>();
     List<String> anyWithSpace;
+    List<String> anyWithSpaceAndNewline;
 
 
     public Automaton() {
         any.addAll(letters);
         any.addAll(digits10);
+        any.addAll(List.of("+/-*()!@#$%^&{}[]?<>|\\,:".split("")));
         anyWithSpace = new ArrayList<>(any);
         anyWithSpace.add(" ");
         anyWithSpace.add(".");
+        anyWithSpace.add("\t");
+        anyWithSpaceAndNewline = new ArrayList<>(anyWithSpace);
+        anyWithSpaceAndNewline.add("\r");
+        anyWithSpaceAndNewline.add("\n");
         start = new State("Start parsing...", false, LexemType.NOT_RECOGNIZED);
         incorrect.appendRule(any, incorrect);
     }
@@ -41,11 +47,10 @@ public class Automaton {
             if (lexem.getLetters().length() == 0){
                 try {
                     ret.add(new Lexem(LexemType.NOT_RECOGNIZED, String.valueOf(s.charAt(i))));
+                    i++;
                 }
                 catch (StringIndexOutOfBoundsException e){
-//                    i--;
                 }
-                i++;
             }
             else {
                 ret.add(lexem);
@@ -97,7 +102,8 @@ public class Automaton {
     private void initIdentifierStates(){
         var q1 = new State("got literal", true, LexemType.IDENTIFIER);
         start.appendRule(letters, q1);
-        q1.appendRule(any, q1);
+        q1.appendRule(letters, q1);
+        q1.appendRule(digits10, q1);
     }
 
     private void initNumericStates(){
@@ -118,13 +124,22 @@ public class Automaton {
         var q4 = new State("got . after int", true, LexemType.FLOAT);
         q3.appendRule(".",q4);
         q4.appendRule(digits10, q4);
+        var q1 = new State("got e", false, LexemType.NOT_RECOGNIZED);
+        var q2 = new State("got numbers after e", true, LexemType.FLOAT);
+        q3.appendRule("e", q1);
+        q4.appendRule("e", q1);
+        q1.appendRule(any, incorrect);
+        q1.appendRule("-", q1);
+        q1.appendRule(digits10, q2);
+        q2.appendRule(any, incorrect);
+        q2.appendRule(digits10, q2);
     }
 
     private void initOctoStates(State s){
         var q1 = new State("got 0, then 1-7", true, LexemType.INT8);
         var oneToSeven = new ArrayList<>(List.of("1234567".split("")));
         s.appendRule(oneToSeven, q1);
-        q1.appendRule(any, new State("incorrect", true, LexemType.NOT_RECOGNIZED));
+        q1.appendRule(any, incorrect);
         q1.appendRule(digits8 ,q1);
         initULStates(q1);
     }
@@ -162,7 +177,7 @@ public class Automaton {
         q0  = new State("Char started", false, LexemType.NOT_RECOGNIZED);
         start.appendRule("'", q0);
         q1 = new State("Got char", false, LexemType.NOT_RECOGNIZED);
-        q0.appendRule(any, q1);
+        q0.appendRule(anyWithSpaceAndNewline, q1);
         var q2 = new State("Char finished", true, LexemType.CHARACTER);
         q1.appendRule("'", q2);
     }
@@ -170,14 +185,27 @@ public class Automaton {
     private void initCommentStates(){
         var q0 = new State("/ input", false, LexemType.NOT_RECOGNIZED);
         start.appendRule("/", q0);
-        var q1 = new State("comment input", true, LexemType.COMMENT);
+        var q1 = new State("line comment input", true, LexemType.COMMENT);
         q0.appendRule("/", q1);
         q1.appendRule(anyWithSpace, q1);
+        var q2 = new State("multiline comment start", false, LexemType.NOT_RECOGNIZED);
+        q0.appendRule("*", q2);
+        q2.appendRule(anyWithSpaceAndNewline, q2);
+        var q3 = new State("got * after multiline comment", false, LexemType.NOT_RECOGNIZED);
+        q2.appendRule("*", q3);
+        q3.appendRule(anyWithSpaceAndNewline, q2);
+        var q4 = new State("finished multiline comment", true, LexemType.COMMENT);
+        q3.appendRule("/", q4);
+        var q5 = new State("newline or tab input", true, LexemType.COMMENT);
+        start.appendRule("\t", q5);
+        start.appendRule("\n", q5);
+        start.appendRule("\r", q5);
+        start.appendRule(" ", q5);
     }
 
     private void initPunctuationOperatorStates(){
         var q0 = new State("Punctuation", true, LexemType.PUNCTUATION);
-        start.appendRule(List.of(",;:()[]".split("")), q0);
+        start.appendRule(List.of(",;:()[]{}".split("")), q0);
 
         q0 = new State("+ input", true, LexemType.OPERATOR);
         start.appendRule("+", q0);
@@ -204,9 +232,22 @@ public class Automaton {
         q0.appendRule("=", q1);
 
         q0 = new State("> input", true, LexemType.OPERATOR);
-        start.appendRule("+", q0);
-        q1 = new State(">> or >=", true, LexemType.OPERATOR);
-        q0.appendRule(List.of(">=".split("")), q1);
+        start.appendRule(">", q0);
+        q1 = new State(">>", true, LexemType.OPERATOR);
+        q0.appendRule(">", q1);
+        var q2 = new State(">=", true, LexemType.OPERATOR);
+        q0.appendRule("=", q2);
+        var q3 = new State(">>=", true, LexemType.OPERATOR);
+        q1.appendRule("=", q3);
+
+        q0 = new State("< input", true, LexemType.OPERATOR);
+        start.appendRule("<", q0);
+        q1 = new State("<<", true, LexemType.OPERATOR);
+        q0.appendRule("<", q1);
+        q2 = new State("<=", true, LexemType.OPERATOR);
+        q0.appendRule("=", q2);
+        q3 = new State("<<=", true, LexemType.OPERATOR);
+        q1.appendRule("=", q3);
 
         q0 = new State("= input", true, LexemType.OPERATOR);
         start.appendRule("=", q0);

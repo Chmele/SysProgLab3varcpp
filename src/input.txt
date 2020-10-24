@@ -1,2 +1,8 @@
-  StatusLine( "Press any key for text mode..." );
-  getch();
+a >>= b;
+a >=b;
+a += b;
+//comment
+/*comment
+
+*/
+2.5e-3;
